@@ -60,7 +60,7 @@ export function TopIllnessesChart() {
             </Pie>
             <ChartLegend
               content={<ChartLegendContent nameKey="name" />}
-              className="flex-col"
+              className="-translate-y-2 flex-wrap gap-2 [&>*]:basis-1/4 [&>*]:justify-center"
             />
           </PieChart>
         </ChartContainer>
