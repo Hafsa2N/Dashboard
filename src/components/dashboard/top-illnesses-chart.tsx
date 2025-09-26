@@ -1,59 +1,102 @@
 'use client';
-import { Pie, PieChart, ResponsiveContainer, Cell, Legend, Tooltip } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ChartTooltipContent, ChartContainer, ChartLegendContent, ChartLegend } from '@/components/ui/chart';
+import * as React from 'react';
+import { Label, Pie, PieChart, RadialBar, RadialBarChart } from 'recharts';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
 import { topIllnesses } from '@/lib/data';
 
-const chartConfig = {
-  count: {
-    label: 'Count',
-  },
-  ...topIllnesses.reduce((acc, cur) => {
-    acc[cur.name] = { label: cur.name, color: `hsl(var(--chart-${Object.keys(acc).length + 1}))` };
+const chartData = topIllnesses.map((illness) => ({
+    name: illness.name,
+    count: illness.count,
+    fill: `var(--color-${illness.name.toLowerCase().replace(/ /g, '-')})`,
+}));
+
+const chartConfig = topIllnesses.reduce((acc, illness, index) => {
+    acc[illness.name.toLowerCase().replace(/ /g, '-')] = {
+      label: illness.name,
+      color: `hsl(var(--chart-${index + 1}))`,
+    };
     return acc;
-  }, {}),
-};
+}, {});
+
+const totalCount = chartData.reduce((acc, curr) => acc + curr.count, 0);
 
 export function TopIllnessesChart() {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="items-center pb-0">
         <CardTitle className="font-headline">Top 5 Illnesses</CardTitle>
         <CardDescription>Distribution of most common diagnoses</CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Tooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />}
-              />
-              <Pie
-                data={topIllnesses}
-                dataKey="count"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                strokeWidth={2}
-              >
-                {topIllnesses.map((entry) => (
-                  <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
-                ))}
-              </Pie>
-              <ChartLegend
-                content={<ChartLegendContent nameKey="name" />}
-                iconSize={10}
-                layout="vertical"
-                verticalAlign="middle"
-                align="right"
-                wrapperStyle={{ right: -10 }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+      <CardContent className="flex-1 pb-0">
+        <ChartContainer
+          config={chartConfig}
+          className="mx-auto aspect-square h-[250px]"
+        >
+          <RadialBarChart
+            data={chartData}
+            startAngle={-90}
+            endAngle={270}
+            innerRadius={80}
+            outerRadius={110}
+          >
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent hideLabel nameKey="name" />}
+            />
+            <RadialBar dataKey="count" background>
+                <Label
+                    content={({ viewBox }) => {
+                    if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
+                        return (
+                        <text
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                        >
+                            <tspan
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            className="fill-foreground text-3xl font-bold"
+                            >
+                            {totalCount.toLocaleString()}
+                            </tspan>
+                            <tspan
+                            x={viewBox.cx}
+                            y={(viewBox.cy || 0) + 20}
+                            className="fill-muted-foreground"
+                            >
+                            Total
+                            </tspan>
+                        </text>
+                        );
+                    }
+                    }}
+                />
+            </RadialBar>
+          </RadialBarChart>
         </ChartContainer>
       </CardContent>
+      <CardFooter className="flex-col gap-2 text-sm">
+        <div className="flex items-center gap-2 font-medium leading-none">
+          Trending up by 5.2% this month
+        </div>
+        <div className="leading-none text-muted-foreground">
+          Showing total admissions for the top 5 illnesses
+        </div>
+      </CardFooter>
     </Card>
   );
 }
