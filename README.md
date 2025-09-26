@@ -1,7 +1,7 @@
 Team Catalyst Crew
 Hafsa Nayeem
 Mariam Fatima
-
+.
 key technologies we've used:
 Framework: Next.js (using the App Router) with React for building the user interface.
 
