@@ -102,7 +102,8 @@ export const waitTimesByDepartment: WaitTimeData[] = departments.map(dep => ({
 export const topIllnesses: IllnessData[] = Object.entries(illnessCounts)
   .sort((a, b) => b[1] - a[1])
   .slice(0, 5)
-  .map(([name, count]) => ({ name, count }));
+  .map(([name, count]) => ({ name, count }))
+  .sort((a, b) => a.name.localeCompare(b.name));
 
 export const populationInsights = [
     { illness: 'Asthma', vital: 'RESP', threshold: 20, percentage: 35 },

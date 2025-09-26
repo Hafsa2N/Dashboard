@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -19,8 +18,7 @@ import {
 } from '@/components/ui/chart';
 import { topIllnesses } from '@/lib/data';
 
-// Sort the data to ensure consistent order between server and client renders
-const chartData = [...topIllnesses].sort((a, b) => a.name.localeCompare(b.name));
+const chartData = topIllnesses;
 
 const chartConfig = chartData.reduce((acc, illness, index) => {
     acc[illness.name] = {
@@ -55,8 +53,8 @@ export function TopIllnessesChart() {
               innerRadius={50}
               strokeWidth={5}
             >
-                {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={chartConfig[entry.name]?.color} />
+                {chartData.map((entry) => (
+                    <Cell key={`cell-${entry.name}`} fill={chartConfig[entry.name]?.color} />
                 ))}
             </Pie>
             <ChartLegend
