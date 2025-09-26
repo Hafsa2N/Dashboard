@@ -8,6 +8,7 @@ import {
   PieChart,
   FlaskConical,
   Settings,
+  Upload,
 } from 'lucide-react';
 
 import {
@@ -28,7 +29,8 @@ export function AppSidebar() {
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admissions', label: 'Admissions', icon: UsersRound, isAlias: (p: string) => p.startsWith('/patients') },
     { href: '/insights', label: 'Insights', icon: PieChart },
-    { href: '/tools/alert-summarizer', label: 'AI Summarizer', icon: FlaskConical, isAlias: (p: string) => p.startsWith('/tools') },
+    { href: '/tools/alert-summarizer', label: 'AI Summarizer', icon: FlaskConical, isAlias: (p: string) => p.startsWith('/tools') && !p.endsWith('signal-analyzer') },
+    { href: '/tools/signal-analyzer', label: 'Signal Analyzer', icon: Upload, isAlias: (p: string) => p.endsWith('signal-analyzer')},
   ];
 
   return (
