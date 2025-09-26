@@ -25,12 +25,22 @@ type AnalysisMetrics = {
 
 const parseCSV = (csvText: string): CsvData[] => {
   const lines = csvText.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim());
+  const headerLine = lines[0].split(',').map(h => h.trim());
+  const headerMapping: {[key: string]: string} = {
+    'Time [s]': 'time',
+    'II': 'hr',
+    'PLETH': 'spo2',
+    'RESP': 'resp'
+  };
+  
+  const mappedHeaders = headerLine.map(h => headerMapping[h] || h);
+
   const data: CsvData[] = [];
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i].split(',').map(v => v.trim());
+    if (values.length !== mappedHeaders.length) continue;
     const entry: any = {};
-    headers.forEach((header, index) => {
+    mappedHeaders.forEach((header, index) => {
       entry[header] = header === 'time' ? values[index] : parseFloat(values[index]);
     });
     data.push(entry as CsvData);
@@ -39,32 +49,37 @@ const parseCSV = (csvText: string): CsvData[] => {
 };
 
 const analyzeData = (data: CsvData[]): AnalysisMetrics => {
-  const hrValues = data.map(d => d.hr);
-  const respValues = data.map(d => d.resp);
-  const spo2Values = data.map(d => d.spo2);
+  const hrValues = data.map(d => d.hr).filter(v => !isNaN(v));
+  const respValues = data.map(d => d.resp).filter(v => !isNaN(v));
+  const spo2Values = data.map(d => d.spo2).filter(v => !isNaN(v));
 
-  const mean = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
+  const mean = (arr: number[]) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
   
   const meanHR = mean(hrValues);
   
-  const sdnn = Math.sqrt(hrValues.map(x => Math.pow(x - meanHR, 2)).reduce((a, b) => a + b) / hrValues.length);
+  const sdnn = hrValues.length > 0 ? Math.sqrt(hrValues.map(x => Math.pow(x - meanHR, 2)).reduce((a, b) => a + b) / hrValues.length) : 0;
   
   const diffs = [];
-  for (let i = 1; i < hrValues.length; i++) {
-    diffs.push(Math.pow(hrValues[i] - hrValues[i-1], 2));
+  if (hrValues.length > 1) {
+    for (let i = 1; i < hrValues.length; i++) {
+      diffs.push(Math.pow(hrValues[i] - hrValues[i-1], 2));
+    }
   }
-  const rmssd = Math.sqrt(mean(diffs));
+  const rmssd = diffs.length > 0 ? Math.sqrt(mean(diffs)) : 0;
 
   const avgResp = mean(respValues);
   
-  const spo2Min = Math.min(...spo2Values);
-  const spo2Max = Math.max(...spo2Values);
+  const spo2Min = spo2Values.length > 0 ? Math.min(...spo2Values) : 0;
+  const spo2Max = spo2Values.length > 0 ? Math.max(...spo2Values) : 0;
   
   let spo2Trend: 'Stable' | 'Increasing' | 'Decreasing' = 'Stable';
-  const firstHalfSpo2 = mean(spo2Values.slice(0, Math.floor(spo2Values.length / 2)));
-  const secondHalfSpo2 = mean(spo2Values.slice(Math.ceil(spo2Values.length / 2)));
-  if (secondHalfSpo2 > firstHalfSpo2 + 0.5) spo2Trend = 'Increasing';
-  if (secondHalfSpo2 < firstHalfSpo2 - 0.5) spo2Trend = 'Decreasing';
+  if (spo2Values.length > 1) {
+    const firstHalfSpo2 = mean(spo2Values.slice(0, Math.floor(spo2Values.length / 2)));
+    const secondHalfSpo2 = mean(spo2Values.slice(Math.ceil(spo2Values.length / 2)));
+    if (secondHalfSpo2 > firstHalfSpo2 + 0.5) spo2Trend = 'Increasing';
+    if (secondHalfSpo2 < firstHalfSpo2 - 0.5) spo2Trend = 'Decreasing';
+  }
+
 
   return {
     meanHR: parseFloat(meanHR.toFixed(2)),
@@ -101,8 +116,8 @@ export function SignalAnalyzer() {
     try {
       const text = await file.text();
       const parsedData = parseCSV(text);
-      if (parsedData.length === 0 || !parsedData[0].hr || !parsedData[0].resp || !parsedData[0].spo2) {
-        throw new Error('Invalid CSV format. Please ensure headers are time, hr, resp, spo2.');
+      if (parsedData.length === 0 || !('hr' in parsedData[0]) || !('resp' in parsedData[0]) || !('spo2' in parsedData[0])) {
+        throw new Error('Invalid CSV format. Please ensure headers are Time [s], RESP, PLETH, and II.');
       }
       const analysisMetrics = analyzeData(parsedData);
       setData(parsedData);
@@ -165,8 +180,8 @@ export function SignalAnalyzer() {
               </CardHeader>
               <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 <div className="p-4 bg-secondary/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Mean HR</p>
-                  <p className="text-2xl font-bold">{metrics.meanHR} <span className="text-sm font-normal">bpm</span></p>
+                  <p className="text-sm text-muted-foreground">Mean HR (from II)</p>
+                  <p className="text-2xl font-bold">{metrics.meanHR} <span className="text-sm font-normal"></span></p>
                 </div>
                 <div className="p-4 bg-secondary/50 rounded-lg">
                   <p className="text-sm text-muted-foreground">SDNN</p>
@@ -181,7 +196,7 @@ export function SignalAnalyzer() {
                   <p className="text-2xl font-bold">{metrics.avgResp} <span className="text-sm font-normal">/min</span></p>
                 </div>
                 <div className="p-4 bg-secondary/50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">SpO₂ Min/Max</p>
+                  <p className="text-sm text-muted-foreground">SpO₂ Min/Max (from PLETH)</p>
                   <p className="text-2xl font-bold">{metrics.spo2Min}% - {metrics.spo2Max}%</p>
                 </div>
                 <div className="p-4 bg-secondary/50 rounded-lg">
@@ -192,9 +207,9 @@ export function SignalAnalyzer() {
             </Card>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <VitalsChart data={data.map(d => ({time: d.time, value: d.hr}))} title="Heart Rate" color="hsl(var(--chart-1))" unit="BPM" />
+              <VitalsChart data={data.map(d => ({time: d.time, value: d.hr}))} title="Heart Rate (from II)" color="hsl(var(--chart-1))" unit="" />
               <VitalsChart data={data.map(d => ({time: d.time, value: d.resp}))} title="Respiration" color="hsl(var(--chart-2))" unit="BPM" />
-              <VitalsChart data={data.map(d => ({time: d.time, value: d.spo2}))} title="SpO₂" color="hsl(var(--chart-4))" unit="%" />
+              <VitalsChart data={data.map(d => ({time: d.time, value: d.spo2}))} title="SpO₂ (from PLETH)" color="hsl(var(--chart-4))" unit="%" />
             </div>
           </div>
         ) : (
