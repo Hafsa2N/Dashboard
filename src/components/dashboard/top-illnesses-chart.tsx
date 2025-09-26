@@ -19,9 +19,10 @@ import {
 } from '@/components/ui/chart';
 import { topIllnesses } from '@/lib/data';
 
-const chartData = topIllnesses;
+// Sort the data to ensure consistent order between server and client renders
+const chartData = [...topIllnesses].sort((a, b) => a.name.localeCompare(b.name));
 
-const chartConfig = topIllnesses.reduce((acc, illness, index) => {
+const chartConfig = chartData.reduce((acc, illness, index) => {
     acc[illness.name] = {
       label: illness.name,
       color: `hsl(var(--chart-${index + 1}))`,
