@@ -51,8 +51,6 @@ Enables interactive and responsive charts for visualizing patient health trends,
 React Hook Form
 Handles efficient form state management with minimal re-rendering.
 
-Zod
-Ensures robust and type-safe validation for user inputs and medical data forms.
 
 **✨ Key Features**
 
