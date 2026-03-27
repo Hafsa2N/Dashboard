@@ -1,6 +1,6 @@
 **🚑 Healthcare Dashboard**
 
-A modern AI-powered healthcare monitoring dashboard designed to visualize patient health metrics, detect anomalies, and assist clinicians with intelligent insights. The platform integrates real-time data visualization, AI-assisted alert summaries, and interactive health analytics to support better medical decision-making.
+A modern AI-powered healthcare monitoring dashboard designed to visualize patient health metrics, detect anomalies, and assist clinicians with intelligent insights. The platform integrates real-time data visualization, AI-assisted alert summaries, and interactive health analytics to support better medical decision-making and analysis.
 
 **🛠 Tech Stack**
 
